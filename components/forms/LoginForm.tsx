@@ -7,50 +7,50 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Form } from "@/components/ui/form";
-import { getOrCreateUser } from "@/lib/actions/patient.actions";
-import { UserFormValidation } from "@/lib/validation";
+import { loginUser } from "@/lib/actions/patient.actions";
 
 import "react-phone-number-input/style.css";
 import CustomFormField, { FormFieldType } from "../CustomFormField";
 import SubmitButton from "../SubmitButton";
 
-export const PatientForm = () => {
+// Login validation schema
+const LoginFormValidation = z.object({
+  email: z.string().email("Invalid email address"),
+  phone: z
+    .string()
+    .refine((phone) => /^\+\d{10,15}$/.test(phone), "Invalid phone number"),
+});
+
+export const LoginForm = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const form = useForm<z.infer<typeof UserFormValidation>>({
-    resolver: zodResolver(UserFormValidation),
+  const form = useForm<z.infer<typeof LoginFormValidation>>({
+    resolver: zodResolver(LoginFormValidation),
     defaultValues: {
-      name: "",
       email: "",
       phone: "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof UserFormValidation>) => {
+  const onSubmit = async (values: z.infer<typeof LoginFormValidation>) => {
     setIsLoading(true);
+    setError("");
 
     try {
-      const user = {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-      };
+      const user = await loginUser(values);
 
-      const result = await getOrCreateUser(user);
-
-      if (result) {
-        if (result.hasPatient) {
-          // User already has a patient profile, go to dashboard
-          router.push(`/patients/${result.user.$id}/dashboard`);
-        } else {
-          // User exists but no patient profile, go to registration
-          router.push(`/patients/${result.user.$id}/register`);
-        }
+      if (user) {
+        // Store user info in localStorage for session management
+        localStorage.setItem("currentUser", JSON.stringify(user));
+        router.push(`/patients/${user.$id}/dashboard`);
+      } else {
+        setError("Invalid credentials. Please check your email and phone number.");
       }
     } catch (error) {
       console.log(error);
-      // Remove the error handling for existing email/phone since we now allow them
+      setError("An error occurred during login. Please try again.");
     }
 
     setIsLoading(false);
@@ -60,18 +60,16 @@ export const PatientForm = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 space-y-6">
         <section className="mb-12 space-y-4">
-          <h1 className="header">Hi there 👋</h1>
-          <p className="text-dark-700">Get started with appointments.</p>
+          <h1 className="header">Welcome Back 👋</h1>
+          <p className="text-dark-700">Sign in to access your appointments.</p>
         </section>
-        <CustomFormField
-          fieldType={FormFieldType.INPUT}
-          control={form.control}
-          name="name"
-          label="Full name"
-          placeholder="John Doe"
-          iconSrc="/assets/icons/user.svg"
-          iconAlt="user"
-        />
+
+        {error && (
+          <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+            {error}
+          </div>
+        )}
+
         <CustomFormField
           fieldType={FormFieldType.INPUT}
           control={form.control}
@@ -81,6 +79,7 @@ export const PatientForm = () => {
           iconSrc="/assets/icons/email.svg"
           iconAlt="email"
         />
+
         <CustomFormField
           fieldType={FormFieldType.PHONE_INPUT}
           control={form.control}
@@ -88,21 +87,22 @@ export const PatientForm = () => {
           label="Phone number"
           placeholder="(555) 123-4567"
         />
-        <SubmitButton isLoading={isLoading}>Get Started</SubmitButton>
+
+        <SubmitButton isLoading={isLoading}>Sign In</SubmitButton>
 
         <div className="text-center">
           <p className="text-14-regular text-dark-600">
-            Already have an account?{" "}
+            Don't have an account?{" "}
             <button
               type="button"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/")}
               className="text-green-500 hover:text-green-600 font-medium"
             >
-              Sign in here
+              Register here
             </button>
           </p>
         </div>
       </form>
     </Form>
   );
-};
+}; 

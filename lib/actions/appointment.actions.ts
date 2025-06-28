@@ -3,14 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { ID, Query } from "node-appwrite";
 
-import { Appointment } from "@/types/appwrite.types";
+import { Appointment } from "@/types/mock.types";
 
 import {
   NEXT_PUBLIC_APPOINTMENT_COLLECTION_ID,
   NEXT_PUBLIC_DATABASE_ID,
   databases,
   messaging,
-} from "../appwrite.config";
+} from "../mock.config";
 import { formatDateTime, parseStringify } from "../utils";
 
 //  CREATE APPOINTMENT
@@ -149,7 +149,7 @@ export const updateAppointment = async ({
 
     if (!updatedAppointment) throw Error;
 
-    const smsMessage = `Greetings from CarePulse. ${type === "schedule" ? `Your appointment is confirmed for ${formatDateTime(appointment.schedule!, timeZone).dateTime} with Dr. ${appointment.primaryPhysician}` : `We regret to inform that your appointment for ${formatDateTime(appointment.schedule!, timeZone).dateTime} is cancelled. Reason:  ${appointment.cancellationReason}`}.`;
+    const smsMessage = `Greetings from CarePulse. ${type === "schedule" ? `Your appointment is confirmed for ${formatDateTime(appointment.schedule!, timeZone).dateTime} with Dr. ${appointment.primaryPhysician || "your doctor"}` : `We regret to inform that your appointment for ${formatDateTime(appointment.schedule!, timeZone).dateTime} is cancelled. Reason:  ${appointment.cancellationReason || "No reason provided"}`}.`;
     await sendSMSNotification(userId, smsMessage);
 
     revalidatePath("/admin");

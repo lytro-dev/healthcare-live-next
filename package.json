@@ -21,6 +21,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@sentry/nextjs": "^8.9.2",
     "@tanstack/react-table": "^8.17.0",
+    "@types/uuid": "^10.0.0",
     "appwrite": "^16.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -44,6 +45,7 @@
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.0.4",
+    "uuid": "^11.1.0",
     "zod": "^3.23.6"
   },
   "devDependencies": {

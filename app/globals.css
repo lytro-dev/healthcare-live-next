@@ -275,6 +275,23 @@
   .date-picker {
     @apply overflow-hidden border-transparent w-full placeholder:text-dark-600  h-11 text-14-medium rounded-md px-3 outline-none !important;
   }
+
+  /* Make the flag smaller */
+  .PhoneInputCountryIcon {
+    width: 20px !important;
+    height: 15px !important;
+  }
+
+  .PhoneInputCountryIconImg {
+    width: 20px !important;
+    height: 15px !important;
+    object-fit: cover;
+  }
+
+  /* Adjust the flag container spacing */
+  .PhoneInputCountry {
+    margin-right: 8px;
+  }
 }
 
 /* =====  REACT-DATEPICKER OVERRIDES */

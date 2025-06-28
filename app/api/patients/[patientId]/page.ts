@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { databases } from "@/lib/appwrite.config";
+import { databases } from "@/lib/mock.config";
 
 export default async function handler(
   req: NextApiRequest,

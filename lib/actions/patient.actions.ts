@@ -11,7 +11,7 @@ import {
   databases,
   storage,
   users,
-} from "../appwrite.config";
+} from "../mock.config";
 import { parseStringify } from "../utils";
 
 // CREATE APPWRITE USER
@@ -40,6 +40,45 @@ export const createUser = async (user: CreateUserParams) => {
   }
 };
 
+// GET OR CREATE USER (for registration flow)
+export const getOrCreateUser = async (user: CreateUserParams) => {
+  try {
+    // First, try to find existing user
+    const usersList = await users.list([
+      Query.equal("email", [user.email]),
+    ]);
+
+    let existingUser = usersList.users[0];
+
+    if (existingUser) {
+      // User exists, check if they have a patient profile
+      const patient = await getPatient(existingUser.$id);
+      
+      if (patient) {
+        // User has a patient profile, redirect to appointments
+        return { user: parseStringify(existingUser), hasPatient: true };
+      } else {
+        // User exists but no patient profile, redirect to registration
+        return { user: parseStringify(existingUser), hasPatient: false };
+      }
+    } else {
+      // User doesn't exist, create new user
+      const newUser = await users.create(
+        ID.unique(),
+        user.email,
+        user.phone,
+        undefined,
+        user.name
+      );
+      
+      return { user: parseStringify(newUser), hasPatient: false };
+    }
+  } catch (error) {
+    console.error("An error occurred while getting or creating user:", error);
+    throw error;
+  }
+};
+
 // GET USER
 export const getUser = async (userId: string) => {
   try {
@@ -51,6 +90,26 @@ export const getUser = async (userId: string) => {
       "An error occurred while retrieving the user details:",
       error
     );
+  }
+};
+
+// LOGIN USER
+export const loginUser = async (credentials: { email: string; phone: string }) => {
+  try {
+    const usersList = await users.list([
+      Query.equal("email", [credentials.email]),
+    ]);
+
+    const user = usersList.users[0];
+
+    if (user && user.phone === credentials.phone) {
+      return parseStringify(user);
+    }
+
+    return null;
+  } catch (error) {
+    console.error("An error occurred during login:", error);
+    return null;
   }
 };
 
@@ -106,6 +165,24 @@ export const getPatient = async (userId: string) => {
   } catch (error) {
     console.error(
       "An error occurred while retrieving the patient details:",
+      error
+    );
+  }
+};
+
+// GET PATIENT BY EMAIL (alternative method)
+export const getPatientByEmail = async (email: string) => {
+  try {
+    const patients = await databases.listDocuments(
+      NEXT_PUBLIC_DATABASE_ID!,
+      NEXT_PUBLIC_PATIENT_COLLECTION_ID!,
+      [Query.equal("email", [email])]
+    );
+
+    return parseStringify(patients.documents[0]);
+  } catch (error) {
+    console.error(
+      "An error occurred while retrieving the patient details by email:",
       error
     );
   }
