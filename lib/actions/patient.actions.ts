@@ -11,6 +11,7 @@ import {
   databases,
   storage,
   users,
+  mockDb,
 } from "../mock.config";
 import { parseStringify } from "../utils";
 
@@ -113,7 +114,74 @@ export const loginUser = async (credentials: { email: string; phone: string }) =
   }
 };
 
-// REGISTER PATIENT
+// REGISTER PATIENT WITH MOCK DATABASE
+export const registerPatientWithMock = async ({
+  identificationDocument,
+  ...patient
+}: RegisterUserParams) => {
+  try {
+    // Check if patient already exists
+    const existingPatients = await mockDb.listPatients([
+      { equal: ['email', [patient.email]] }
+    ]);
+
+    if (existingPatients.documents.length > 0) {
+      throw new Error('Patient with this email already exists');
+    }
+
+    // Handle file upload if provided
+    let fileId = null;
+    let fileUrl = null;
+    
+    if (identificationDocument) {
+      const blobFile = identificationDocument.get("blobFile") as Blob;
+      const fileName = identificationDocument.get("fileName") as string;
+      
+      if (blobFile && fileName) {
+        const file = await mockDb.createFile(BUCKET_ID!, ID.unique(), {
+          name: fileName,
+          size: blobFile.size,
+          type: blobFile.type,
+        });
+        fileId = file.$id;
+        fileUrl = `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${file.$id}/view?project=${NEXT_PUBLIC_PROJECT_ID}`;
+      }
+    }
+
+    // Create new patient document using mock database
+    const newPatient = await mockDb.createPatient({
+      userId: patient.userId,
+      name: patient.name,
+      email: patient.email,
+      phone: patient.phone,
+      birthDate: patient.birthDate.toISOString(),
+      gender: patient.gender.toLowerCase() as 'male' | 'female' | 'other',
+      address: patient.address,
+      occupation: patient.occupation,
+      emergencyContactName: patient.emergencyContactName,
+      emergencyContactNumber: patient.emergencyContactNumber,
+      primaryPhysician: patient.primaryPhysician,
+      insuranceProvider: patient.insuranceProvider,
+      insurancePolicyNumber: patient.insurancePolicyNumber,
+      allergies: patient.allergies,
+      currentMedication: patient.currentMedication,
+      familyMedicalHistory: patient.familyMedicalHistory,
+      pastMedicalHistory: patient.pastMedicalHistory,
+      identificationType: patient.identificationType,
+      identificationNumber: patient.identificationNumber,
+      identificationDocumentId: fileId,
+      identificationDocumentUrl: fileUrl,
+      privacyConsent: patient.privacyConsent,
+    });
+
+    return parseStringify(newPatient);
+  } catch (error) {
+    console.error("An error occurred while creating a new patient:", error);
+    throw error;
+  }
+};
+
+// REGISTER PATIENT (updated to use mock database)
 export const registerPatient = async ({
   identificationDocument,
   ...patient
@@ -178,6 +246,38 @@ export const getPatientByEmail = async (email: string) => {
       NEXT_PUBLIC_PATIENT_COLLECTION_ID!,
       [Query.equal("email", [email])]
     );
+
+    return parseStringify(patients.documents[0]);
+  } catch (error) {
+    console.error(
+      "An error occurred while retrieving the patient details by email:",
+      error
+    );
+  }
+};
+
+// GET PATIENT WITH MOCK DATABASE
+export const getPatientWithMock = async (userId: string) => {
+  try {
+    const patients = await mockDb.listPatients([
+      { equal: ['userId', [userId]] }
+    ]);
+
+    return parseStringify(patients.documents[0]);
+  } catch (error) {
+    console.error(
+      "An error occurred while retrieving the patient details:",
+      error
+    );
+  }
+};
+
+// GET PATIENT BY EMAIL WITH MOCK DATABASE
+export const getPatientByEmailWithMock = async (email: string) => {
+  try {
+    const patients = await mockDb.listPatients([
+      { equal: ['email', [email]] }
+    ]);
 
     return parseStringify(patients.documents[0]);
   } catch (error) {

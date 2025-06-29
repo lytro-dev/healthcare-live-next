@@ -1,5 +1,8 @@
 import { mockDb } from './mock-db';
 
+// Export mockDb for direct access
+export { mockDb };
+
 // Mock configuration that mimics Appwrite's interface
 export const databases = {
   createDocument: async (databaseId: string, collectionId: string, documentId: string, data: any) => {
